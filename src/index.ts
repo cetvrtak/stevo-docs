@@ -1,9 +1,15 @@
-document.getElementById('previewBtn')?.addEventListener('click', () => {
+document.getElementById('previewBtn')?.addEventListener('click', async () => {
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
     const templateId = extractIdFromUrl(templateLink);
 
     if (templateId) {
-        loadGoogleDoc(templateId);
+        try {
+            const docText = await loadGoogleDoc(templateId);
+            const variables = extractVariables(docText);
+            variables.forEach(v => loadGoogleSheetData(v));
+        } catch (error) {
+            console.error('Error loading Google Doc', error);
+        }
     }
 
     ($('#previewModal') as any).modal('show');
@@ -15,18 +21,13 @@ function extractIdFromUrl(url: string): string | null {
     return matches ? matches[1] : null;
 }
 
-function loadGoogleDoc(docId: string) {
+async function loadGoogleDoc(docId: string): Promise<string> {
     const docUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
-
-    fetch(docUrl)
-        .then(response => response.text())
-        .then(docText => {
-            const variables = extractVariables(docText);
-            variables.forEach(v => loadGoogleSheetData(v));
-        })
-        .catch(error => {
-            console.error('Error loading Google Doc', error);
-        });
+    const response = await fetch(docUrl);
+    if (!response.ok) {
+        throw new Error('Failed to fetch document');
+    }
+    return response.text();
 }
 
 function extractVariables(text: string): { sheet: string, column1: string, row1: string, column2: string | null, row2: string | null }[] {
@@ -39,15 +40,15 @@ function extractVariables(text: string): { sheet: string, column1: string, row1:
             sheet: parts[0],
             column1: parts[1],
             row1: parts[2],
-            column2: parts[3] || null,
-            row2: parts[4] || null
+            column2: parts[3] || parts[1],
+            row2: parts[4] || parts[2]
         };
         variables.push(variable);
     }
     return variables;
 }
 
-function loadGoogleSheetData(variable: { sheet: string, column1: string, row1: string, column2: string | null, row2: string | null }) {
+async function loadGoogleSheetData(variable: { sheet: string, column1: string, row1: string, column2: string | null, row2: string | null }) {
     const tableLink = (document.getElementById('tableWithData') as HTMLInputElement).value;
     const tableId = extractIdFromUrl(tableLink);
 
@@ -56,26 +57,24 @@ function loadGoogleSheetData(variable: { sheet: string, column1: string, row1: s
     const range = getRange(variable.column1, variable.row1, variable.column2, variable.row2);
     const sheetUrl = `https://docs.google.com/spreadsheets/d/${tableId}/gviz/tq?tqx=out:csv&sheet=${variable.sheet}&range=${range}`;
 
-    fetch(sheetUrl)
-        .then(response => response.text())
-        .then(sheetData => {
-            console.log(`${variable.sheet}-${range}`, sheetData);
-            // Process the sheet data as needed
-        })
-        .catch(error => {
-            console.error('Error loading Google Sheet data', error);
-        });
+    const response = await fetch(sheetUrl);
+    if (!response.ok) {
+        throw new Error('Failed to fetch sheet data');
+    }
+    const sheetData = await response.text();
+    console.log(`${variable.sheet}-${range}`, sheetData);
+    // Process the sheet data as needed
 }
 
 function getRange(column1: string, row1: string, column2: string | null, row2: string | null): string {
-    const columnLetter1 = getColumnLetter(column1);
-    const columnLetter2 = column2 ? getColumnLetter(column2) : columnLetter1;
+    const columnLetter1 = getColumnLetter(parseInt(column1, 10));
+    const columnLetter2 = column2 ? getColumnLetter(parseInt(column2, 10)) : columnLetter1;
     return `${columnLetter1}${row1}:${columnLetter2}${row2 || row1}`;
 }
 
-function getColumnLetter(column: string): string {
+function getColumnLetter(column: number): string {
     let columnString = '';
-    let columnNumber = Number(column);
+    let columnNumber = column;
     while (columnNumber > 0) {
         let remainder = (columnNumber - 1) % 26;
         columnString = String.fromCharCode(65 + remainder) + columnString;
