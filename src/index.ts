@@ -1,3 +1,5 @@
+import { Document, Paragraph, TextRun } from "docx";
+
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
     const templateId = extractIdFromUrl(templateLink);
@@ -8,7 +10,8 @@ document.getElementById('previewBtn')?.addEventListener('click', async () => {
             const variables = extractVariables(docText);
             const sheetDataArray = await Promise.all(variables.map(v => loadGoogleSheetData(v)));
             console.log('Ordered sheet data:', sheetDataArray);
-            // Process the ordered sheet data as needed
+
+            const newDoc = createDocxFromSheetData(sheetDataArray);
         } catch (error) {
             console.error('Error loading Google Doc', error);
         }
@@ -81,4 +84,21 @@ function getColumnLetter(column: number): string {
         columnNumber = Math.floor((columnNumber - 1) / 26);
     }
     return columnString;
+}
+
+function createDocxFromSheetData(sheetDataArray: string[]): Document {
+    const doc = new Document({
+        sections: [
+            {
+                properties: {},
+                children: sheetDataArray.flatMap(sheetData =>
+                    sheetData.split('\n').map(line => new Paragraph({
+                        children: [new TextRun(line)]
+                    }))
+                )
+            }
+        ]
+    });
+
+    return doc;
 }
