@@ -1,4 +1,4 @@
-import { Document, Paragraph, TextRun } from "docx";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
@@ -12,6 +12,8 @@ document.getElementById('previewBtn')?.addEventListener('click', async () => {
             console.log('Ordered sheet data:', sheetDataArray);
 
             const newDoc = createDocxFromSheetData(sheetDataArray);
+            downloadDocx(newDoc, "output.docx");
+
         } catch (error) {
             console.error('Error loading Google Doc', error);
         }
@@ -101,4 +103,15 @@ function createDocxFromSheetData(sheetDataArray: string[]): Document {
     });
 
     return doc;
+}
+
+function downloadDocx(doc: Document, fileName: string) {
+    Packer.toBlob(doc).then(blob => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 }
