@@ -6,7 +6,9 @@ document.getElementById('previewBtn')?.addEventListener('click', async () => {
         try {
             const docText = await loadGoogleDoc(templateId);
             const variables = extractVariables(docText);
-            variables.forEach(v => loadGoogleSheetData(v));
+            const sheetDataArray = await Promise.all(variables.map(v => loadGoogleSheetData(v)));
+            console.log('Ordered sheet data:', sheetDataArray);
+            // Process the ordered sheet data as needed
         } catch (error) {
             console.error('Error loading Google Doc', error);
         }
@@ -48,7 +50,7 @@ function extractVariables(text: string): { sheet: string, column1: string, row1:
     return variables;
 }
 
-async function loadGoogleSheetData(variable: { sheet: string, column1: string, row1: string, column2: string | null, row2: string | null }) {
+async function loadGoogleSheetData(variable: { sheet: string, column1: string, row1: string, column2: string | null, row2: string | null }): Promise<string> {
     const tableLink = (document.getElementById('tableWithData') as HTMLInputElement).value;
     const tableId = extractIdFromUrl(tableLink);
 
@@ -61,9 +63,7 @@ async function loadGoogleSheetData(variable: { sheet: string, column1: string, r
     if (!response.ok) {
         throw new Error('Failed to fetch sheet data');
     }
-    const sheetData = await response.text();
-    console.log(`${variable.sheet}-${range}`, sheetData);
-    // Process the sheet data as needed
+    return response.text();
 }
 
 function getRange(column1: string, row1: string, column2: string | null, row2: string | null): string {
