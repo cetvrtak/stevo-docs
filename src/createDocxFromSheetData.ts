@@ -16,11 +16,20 @@ export function createDocxFromSheetData(sheetDataArray: string[][][]): Document 
             });
         });
 
+    const tableElements = tables.map((table, index) => {
+        const elements: any[] = [table];
+        if (index < tables.length - 1) {
+            // Add a paragraph with spacing after each table except the last one
+            elements.push(new Paragraph({ spacing: { after: 200 } }));
+        }
+        return elements;
+    }).flat();
+
     const doc = new Document({
         sections: [
             {
                 properties: {},
-                children: tables
+                children: tableElements
             }
         ]
     });
