@@ -2,6 +2,7 @@ import { Document, Packer } from "docx";
 import { loadGoogleDoc } from './loadGoogleDoc';
 import { loadGoogleSheetData } from './loadGoogleSheetData';
 import { createDocxFromSheetData } from "./createDocxFromSheetData";
+import { renderHtmlTable } from "./renderHtmlTable";
 
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
@@ -21,6 +22,9 @@ document.getElementById('previewBtn')?.addEventListener('click', async () => {
                 return loadGoogleSheetData(tableId, v.sheet, range);
             }));
             console.log('Ordered sheet data:', sheetDataArray);
+
+            const tableHtml = renderHtmlTable(sheetDataArray);
+            $('.modal-body').html(tableHtml);
 
             const newDoc = createDocxFromSheetData(sheetDataArray);
             downloadDocx(newDoc, "output.docx");
