@@ -1,8 +1,8 @@
-import { Document, Packer } from "docx";
 import { loadGoogleDoc } from './loadGoogleDoc';
 import { loadGoogleSheetData } from './loadGoogleSheetData';
 import { createDocxFromSheetData } from "./createDocxFromSheetData";
 import { renderHtmlTable } from "./renderHtmlTable";
+import { downloadDocx } from "./downloadDocx";
 
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
@@ -76,15 +76,4 @@ function getColumnLetter(column: number): string {
         columnNumber = Math.floor((columnNumber - 1) / 26);
     }
     return columnString;
-}
-
-function downloadDocx(doc: Document, fileName: string) {
-    Packer.toBlob(doc).then(blob => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
 }
