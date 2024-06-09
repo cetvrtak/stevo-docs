@@ -47,7 +47,6 @@ async function loadSheetData(): Promise<void> {
             const range = getRange(v.column1, v.row1, v.column2, v.row2);
             return loadGoogleSheetData(tableId, v.sheet, range);
         }));
-        console.log('Ordered sheet data:', sheetDataArray);
     }
 }
 
