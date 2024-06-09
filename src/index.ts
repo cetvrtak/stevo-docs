@@ -8,10 +8,11 @@ let sheetDataArray: string[][][] = [];
 
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     try {
+        ($('#previewModal') as any).modal('show');
+
         await loadSheetData();
         const tableHtml = renderHtmlTable(sheetDataArray);
         $('.modal-body').html(tableHtml);
-        ($('#previewModal') as any).modal('show');
     } catch (error) {
         console.error('Error loading data', error);
     }
