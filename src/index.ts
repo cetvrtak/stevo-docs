@@ -4,38 +4,51 @@ import { createDocxFromSheetData } from "./createDocxFromSheetData";
 import { renderHtmlTable } from "./renderHtmlTable";
 import { downloadDocx } from "./downloadDocx";
 
+let sheetDataArray: string[][][] = [];
+
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
+    try {
+        await loadSheetData();
+        const tableHtml = renderHtmlTable(sheetDataArray);
+        $('.modal-body').html(tableHtml);
+        ($('#previewModal') as any).modal('show');
+    } catch (error) {
+        console.error('Error loading data', error);
+    }
+});
+
+document.getElementById('getFileBtn')?.addEventListener('click', async () => {
+    try {
+        await loadSheetData();
+        const newDoc = createDocxFromSheetData(sheetDataArray);
+        downloadDocx(newDoc, "output.docx");
+    } catch (error) {
+        console.error('Error loading data', error);
+    }
+});
+
+async function loadSheetData(): Promise<void> {
+    if (sheetDataArray.length > 0) {
+        return;
+    }
     const templateLink = (document.getElementById('template') as HTMLInputElement).value;
     const templateId = extractIdFromUrl(templateLink);
 
     if (templateId) {
-        try {
-            const docText = await loadGoogleDoc(templateId);
-            const variables = extractVariables(docText);
-            const tableLink = (document.getElementById('tableWithData') as HTMLInputElement).value;
-            const tableId = extractIdFromUrl(tableLink);
+        const docText = await loadGoogleDoc(templateId);
+        const variables = extractVariables(docText);
+        const tableLink = (document.getElementById('tableWithData') as HTMLInputElement).value;
+        const tableId = extractIdFromUrl(tableLink);
 
-            if (!tableId) throw new Error('Invalid Google Sheet ID');
+        if (!tableId) throw new Error('Invalid Google Sheet ID');
 
-            const sheetDataArray = await Promise.all(variables.map(v => {
-                const range = getRange(v.column1, v.row1, v.column2, v.row2);
-                return loadGoogleSheetData(tableId, v.sheet, range);
-            }));
-            console.log('Ordered sheet data:', sheetDataArray);
-
-            const tableHtml = renderHtmlTable(sheetDataArray);
-            $('.modal-body').html(tableHtml);
-
-            const newDoc = createDocxFromSheetData(sheetDataArray);
-            downloadDocx(newDoc, "output.docx");
-
-        } catch (error) {
-            console.error('Error loading Google Doc', error);
-        }
+        sheetDataArray = await Promise.all(variables.map(v => {
+            const range = getRange(v.column1, v.row1, v.column2, v.row2);
+            return loadGoogleSheetData(tableId, v.sheet, range);
+        }));
+        console.log('Ordered sheet data:', sheetDataArray);
     }
-
-    ($('#previewModal') as any).modal('show');
-});
+}
 
 function extractIdFromUrl(url: string): string | null {
     const regex = /\/d\/([a-zA-Z0-9-_]+)\//;
