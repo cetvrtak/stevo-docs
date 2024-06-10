@@ -9,22 +9,35 @@ let sheetDataArray: string[][][] = [];
 document.getElementById('previewBtn')?.addEventListener('click', async () => {
     try {
         ($('#previewModal') as any).modal('show');
+        $('.modal-body').html('Загрузка данных...');
 
         await loadSheetData();
+        if (sheetDataArray.length === 0) {
+            $('.modal-body').html('Данные недоступны.');
+            return;
+        }
+
         const tableHtml = renderHtmlTable(sheetDataArray);
         $('.modal-body').html(tableHtml);
     } catch (error) {
         console.error('Error loading data', error);
+        $('.modal-body').html('Ошибка загрузки данных.');
     }
 });
 
 document.getElementById('getFileBtn')?.addEventListener('click', async () => {
     try {
         await loadSheetData();
+        if (sheetDataArray.length === 0) {
+            alert('Нет данных для создания файла.');
+            return;
+        }
+
         const newDoc = createDocxFromSheetData(sheetDataArray);
         downloadDocx(newDoc, "output.docx");
     } catch (error) {
         console.error('Error loading data', error);
+        alert('Ошибка загрузки данных.');
     }
 });
 
