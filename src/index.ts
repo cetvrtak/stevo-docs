@@ -43,10 +43,7 @@ async function loadSheetData(): Promise<void> {
 
         if (!tableId) throw new Error('Invalid Google Sheet ID');
 
-        sheetDataArray = await Promise.all(variables.map(v => {
-            const range = getRange(v.column1, v.row1, v.column2, v.row2);
-            return loadGoogleSheetData(tableId, v.sheet, range);
-        }));
+        sheetDataArray = await Promise.all(variables.map(v => loadGoogleSheetData(tableId, v)));
     }
 }
 
@@ -72,21 +69,4 @@ function extractVariables(text: string): { sheet: string, column1: string, row1:
         variables.push(variable);
     }
     return variables;
-}
-
-function getRange(column1: string, row1: string, column2: string | null, row2: string | null): string {
-    const columnLetter1 = getColumnLetter(parseInt(column1, 10));
-    const columnLetter2 = column2 ? getColumnLetter(parseInt(column2, 10)) : columnLetter1;
-    return `${columnLetter1}${row1}:${columnLetter2}${row2 || row1}`;
-}
-
-function getColumnLetter(column: number): string {
-    let columnString = '';
-    let columnNumber = column;
-    while (columnNumber > 0) {
-        let remainder = (columnNumber - 1) % 26;
-        columnString = String.fromCharCode(65 + remainder) + columnString;
-        columnNumber = Math.floor((columnNumber - 1) / 26);
-    }
-    return columnString;
 }
