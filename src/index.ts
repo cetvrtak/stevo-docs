@@ -32,10 +32,13 @@ async function loadSheetData(): Promise<void> {
     if (sheetDataArray.length > 0) {
         return;
     }
-    const templateLink = (document.getElementById('template') as HTMLInputElement).value;
-    const templateId = extractIdFromUrl(templateLink);
 
-    if (templateId) {
+    try {
+        const templateLink = (document.getElementById('template') as HTMLInputElement).value;
+        const templateId = extractIdFromUrl(templateLink);
+
+        if (!templateId) throw new Error('Invalid Google Docs ID');
+
         const docText = await loadGoogleDoc(templateId);
         const variables = extractVariables(docText);
         const tableLink = (document.getElementById('tableWithData') as HTMLInputElement).value;
@@ -44,6 +47,8 @@ async function loadSheetData(): Promise<void> {
         if (!tableId) throw new Error('Invalid Google Sheet ID');
 
         sheetDataArray = await Promise.all(variables.map(v => loadGoogleSheetData(tableId, v)));
+    } catch (error) {
+        console.error(error);
     }
 }
 
